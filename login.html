@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <title>Login - Vibe Tribe</title>
 
-  <!-- FONT -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
 
   <style>
@@ -15,136 +14,102 @@
     .note { font-size:13px; color:#475569; text-align:center; margin-bottom:14px; }
     input { width:100%; padding:12px; margin:8px 0; border:1px solid #e6e9ef; border-radius:8px; font-size:14px; }
     button { width:100%; padding:12px; margin-top:10px; border:none; border-radius:8px; background:#2563eb; color:#fff; font-weight:600; cursor:pointer; }
-    button:active { transform:translateY(1px); }
     .small { font-size:13px; color:#64748b; text-align:center; margin-top:8px; }
     #recaptcha-container { margin-top:6px; display:flex; justify-content:center; }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="box">
-      <h2>Login to Vibe Tribe</h2>
-      <p class="note">Enter your phone number. We will send an OTP to verify.</p>
+<div class="container">
+  <div class="box">
+    <h2>Login to Vibe Tribe</h2>
+    <p class="note">Enter your phone number. We will send an OTP.</p>
 
-      <!-- PHONE INPUT -->
-      <input id="phone" placeholder="+91xxxxxxxxxx" value="+91" />
+    <input id="phone" placeholder="+91xxxxxxxxxx" value="+91" />
+    <div id="recaptcha-container"></div>
+    <button id="sendBtn">Send OTP</button>
 
-      <!-- recaptcha renders here -->
-      <div id="recaptcha-container"></div>
-      <button id="sendBtn" onclick="sendOTP()">Send OTP</button>
+    <input id="otp" placeholder="Enter OTP" style="display:none" />
+    <button id="verifyBtn" style="display:none">Verify OTP</button>
 
-      <!-- OTP input -->
-      <input id="otp" placeholder="Enter OTP" style="display:none" />
-      <button id="verifyBtn" onclick="verifyOTP()" style="display:none">Verify OTP</button>
-
-      <p class="small">Need help? Contact admin.</p>
-    </div>
+    <p class="small">Need help? Contact admin.</p>
   </div>
+</div>
 
-  <!-- Firebase JS libs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"></script>
+<!-- Firebase v9 COMPAT (working with legacy syntax) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-  <script>
-    const firebaseConfig = {
-  apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
-  authDomain: "vibe-tribe-d5138.firebaseapp.com",
-  projectId: "vibe-tribe-d5138",
-  storageBucket: "vibe-tribe-d5138.firebasestorage.app",
-  messagingSenderId: "656217231234",
-  appId: "1:656217231234:web:e19e5e41836c4893c9899b",
-  measurementId: "G-BMJ9XQD4WD"
-};
+<script>
+  // Your config
+  const firebaseConfig = {
+    apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
+    authDomain: "vibe-tribe-d5138.firebaseapp.com",
+    projectId: "vibe-tribe-d5138",
+    storageBucket: "vibe-tribe-d5138.firebasestorage.app",
+    messagingSenderId: "656217231234",
+    appId: "1:656217231234:web:e19e5e41836c4893c9899b",
+    measurementId: "G-BMJ9XQD4WD"
+  };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-    // Render invisible recaptcha and keep a verifier object
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-      size: 'invisible',
-      callback: (response) => {
-        // recaptcha solved -> will proceed with sendOTP()
-      }
-    });
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
 
-    // Elements
-    const phoneInput = document.getElementById('phone');
-    const otpInput = document.getElementById('otp');
-    const sendBtn = document.getElementById('sendBtn');
-    const verifyBtn = document.getElementById('verifyBtn');
+  // Recaptcha
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    size: 'invisible'
+  });
 
-    let confirmationResult = null;
+  const phoneInput = document.getElementById("phone");
+  const otpInput = document.getElementById("otp");
+  const sendBtn = document.getElementById("sendBtn");
+  const verifyBtn = document.getElementById("verifyBtn");
 
-    function sendOTP(){
-      const phoneNumber = phoneInput.value.trim();
-      if (!phoneNumber) { alert('Enter phone number in international format (e.g. +919876543210)'); return; }
+  let confirmationResult;
 
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'Sending...';
+  sendBtn.onclick = function () {
+    const phone = phoneInput.value.trim();
+    if (!phone) return alert("Enter phone number");
 
-      auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
-        .then((res) => {
-          confirmationResult = res;
-          alert('OTP sent to ' + phoneNumber);
-          // show OTP field
-          otpInput.style.display = 'block';
-          verifyBtn.style.display = 'block';
-          sendBtn.style.display = 'none';
-        })
-        .catch((err) => {
-          console.error(err);
-          alert('Error sending OTP: ' + (err.message || err));
-          sendBtn.disabled = false;
-          sendBtn.textContent = 'Send OTP';
-          // reset recaptcha
-          window.recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
-        });
-    }
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Sending...";
 
-    function verifyOTP(){
-      const code = otpInput.value.trim();
-      if (!code) { alert('Enter OTP'); return; }
+    auth.signInWithPhoneNumber(phone, window.recaptchaVerifier)
+      .then(res => {
+        confirmationResult = res;
+        otpInput.style.display = "block";
+        verifyBtn.style.display = "block";
+        sendBtn.style.display = "none";
+        alert("OTP sent!");
+      })
+      .catch(err => {
+        console.log(err);
+        alert(err.message);
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send OTP";
+      });
+  };
 
-      verifyBtn.disabled = true;
-      verifyBtn.textContent = 'Verifying...';
+  verifyBtn.onclick = function () {
+    const code = otpInput.value.trim();
+    if (!code) return alert("Enter OTP");
 
-      confirmationResult.confirm(code)
-        .then((result) => {
-          const user = result.user;
-          alert('Login successful! Welcome ' + (user.phoneNumber || 'user'));
-          // After login: redirect to home or store user info
-          window.location.href = 'index.html';
-        })
-        .catch((err) => {
-          console.error(err);
-          alert('Invalid OTP. Try again.');
-          verifyBtn.disabled = false;
-          verifyBtn.textContent = 'Verify OTP';
-        });
-    }
-  <!-- Firebase App -->
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Login</title>
-</head>
-<body>
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = "Verifying...";
 
-  <!-- your page content -->
+    confirmationResult.confirm(code)
+      .then(result => {
+        alert("Login Success!");
+        window.location.href = "index.html";
+      })
+      .catch(err => {
+        alert("Invalid OTP");
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = "Verify OTP";
+      });
+  };
 
-  <!-- Firebase CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
-  <!-- Your code --> 
-   <script src="script.js"></script>
+</script>
 
 </body>
 </html>
-
-
-</body>
-</html>
-
-
-
