@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8" />
   <title>Login - Vibe Tribe</title>
-
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
 
   <style>
@@ -20,6 +19,7 @@
 </head>
 
 <body>
+
 <div class="container">
   <div class="box">
     <h2>Login to Vibe Tribe</h2>
@@ -36,30 +36,31 @@
   </div>
 </div>
 
-<!-- Firebase v9 COMPAT (working with legacy syntax) -->
+<!-- Firebase v9 compat -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
 <script>
-  // Your config
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
     authDomain: "vibe-tribe-d5138.firebaseapp.com",
     projectId: "vibe-tribe-d5138",
     storageBucket: "vibe-tribe-d5138.firebasestorage.app",
     messagingSenderId: "656217231234",
-    appId: "1:656217231234:web:e19e5e41836c4893c9899b",
-    measurementId: "G-BMJ9XQD4WD"
+    appId: "1:656217231234:web:e19e5e41836c4893c9899b"
   };
 
+  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
-  // Recaptcha
+  // Recaptcha setup
   window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
     size: 'invisible'
   });
 
+  // DOM elements
   const phoneInput = document.getElementById("phone");
   const otpInput = document.getElementById("otp");
   const sendBtn = document.getElementById("sendBtn");
@@ -67,6 +68,7 @@
 
   let confirmationResult;
 
+  // Send OTP
   sendBtn.onclick = function () {
     const phone = phoneInput.value.trim();
     if (!phone) return alert("Enter phone number");
@@ -83,13 +85,14 @@
         alert("OTP sent!");
       })
       .catch(err => {
-        console.log(err);
+        console.error(err);
         alert(err.message);
         sendBtn.disabled = false;
         sendBtn.textContent = "Send OTP";
       });
   };
 
+  // Verify OTP
   verifyBtn.onclick = function () {
     const code = otpInput.value.trim();
     if (!code) return alert("Enter OTP");
@@ -100,7 +103,7 @@
     confirmationResult.confirm(code)
       .then(result => {
         alert("Login Success!");
-        window.location.href = "index.html";
+        window.location.href = "index.html"; // redirect after login
       })
       .catch(err => {
         alert("Invalid OTP");
@@ -108,7 +111,6 @@
         verifyBtn.textContent = "Verify OTP";
       });
   };
-
 </script>
 
 </body>
