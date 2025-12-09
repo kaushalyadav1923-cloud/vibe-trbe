@@ -1,145 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>My Website</title>
-<style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f7f7f7;
-    }
-    .navbar {
-        background: #121212;
-        padding: 15px;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .container {
-        max-width: 900px;
-        margin: 30px auto;
-        padding: 20px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    button {
-        padding: 10px 15px;
-        background: #007bff;
-        color: white;
-        border: none;
-        cursor: pointer;
-        border-radius: 6px;
-    }
-    button:hover { background: #0056b3; }
+<title>Vibe Tribe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    #uploadSection, #profileSection {
-        display: none;
-        margin-top: 20px;
-    }
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#111;
+  color:white;
+  display:none;
+}
+
+header {
+  background:#222;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+button {
+  background:red;
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  color:white;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+h1 {
+  text-align:center;
+  margin-top:100px;
+}
 </style>
 </head>
-
 <body>
 
-<div class="navbar">
-    <h2>MY SITE</h2>
-    <span id="usernameDisplay"></span>
-    <button id="logoutBtn">Logout</button>
-</div>
+<header>
+  <h2>Vibe Tribe</h2>
+  <button onclick="logout()">Logout</button>
+</header>
 
-<div class="container">
+<h1>Welcome to Dashboard 🎉</h1>
 
-    <h2>Welcome to Dashboard</h2>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
-    <button id="profileBtn">Create Profile</button>
-    <button id="uploadBtn">Upload Video</button>
-
-    <!-- PROFILE SECTION -->
-    <div id="profileSection">
-        <h3>Create Profile</h3>
-        <input type="text" id="fullName" placeholder="Full Name"><br><br>
-        <input type="text" id="bio" placeholder="Short Bio"><br><br>
-        <button id="saveProfile">Save Profile</button>
-    </div>
-
-    <!-- UPLOAD SECTION -->
-    <div id="uploadSection">
-        <h3>Upload Video</h3>
-        <input type="file" id="videoFile"><br><br>
-        <button id="uploadVideo">Upload</button>
-        <p id="status"></p>
-    </div>
-
-</div>
-
-<!-- ============ FIREBASE =============== -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
+<script>
+// 🔥 Config
 const firebaseConfig = {
-    apiKey: "YOUR-API-KEY",
-    authDomain: "YOUR-DOMAIN",
-    projectId: "YOUR-PROJECT-ID",
-    storageBucket: "YOUR-STORAGE",
-    messagingSenderId: "YOUR-SENDER",
-    appId: "YOUR-APP-ID"
+  apiKey: "YOUR-KEY",
+  authDomain: "YOUR-DOMAIN",
+  projectId: "YOUR-PROJECT",
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 
-// ================= LOGIN CHECK =================
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        window.location = "login.html";
-    } else {
-        document.getElementById("usernameDisplay").innerText = user.email;
-    }
+// 🔥 Protect Page
+auth.onAuthStateChanged((user)=>{
+  if(!user){
+    window.location = "login.html";
+  } else {
+    document.body.style.display = "block";
+  }
 });
 
-// ================= LOGOUT =================
-document.getElementById("logoutBtn").onclick = () => {
-    signOut(auth);
-};
-
-// ================= SHOW SECTIONS =================
-document.getElementById("profileBtn").onclick = () => {
-    document.getElementById("profileSection").style.display = "block";
-    document.getElementById("uploadSection").style.display = "none";
-};
-
-document.getElementById("uploadBtn").onclick = () => {
-    document.getElementById("uploadSection").style.display = "block";
-    document.getElementById("profileSection").style.display = "none";
-};
-
-// ================= SAVE PROFILE =================
-document.getElementById("saveProfile").onclick = async () => {
-    let user = auth.currentUser;
-    await setDoc(doc(db, "profiles", user.uid), {
-        name: fullName.value,
-        bio: bio.value
-    });
-    alert("Profile Saved!");
-};
-
-// ================= UPLOAD VIDEO =================
-document.getElementById("uploadVideo").onclick = async () => {
-    let user = auth.currentUser;
-    let file = document.getElementById("videoFile").files[0];
-    let fileRef = ref(storage, "videos/" + user.uid + "/" + file.name);
-
-    await uploadBytes(fileRef, file);
-    document.getElementById("status").innerText = "Video Uploaded!";
-};
+// 🔥 Logout
+function logout(){
+  auth.signOut().then(()=>{
+    window.location = "login.html";
+  });
+}
 </script>
 
 </body>
