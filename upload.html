@@ -1,30 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Upload Video</title>
-</head>
-<body>
-
-<h2>Upload Your Video</h2>
-<input type="file" id="video">
-<button onclick="upload()">Upload</button>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-<script src="firebase.js"></script>
+<input type="file" id="videoFile" accept="video/*">
+<button onclick="uploadVideo()">Upload Video</button>
 
 <script>
-const storage = firebase.storage();
+    const storage = firebase.storage();
 
-function upload(){
-  const file = document.getElementById("video").files[0];
-  const ref = storage.ref("videos/" + file.name);
+    function uploadVideo() {
+        let file = document.getElementById("videoFile").files[0];
+        if (!file) {
+            alert("Select a video first!");
+            return;
+        }
 
-  ref.put(file).then(()=>{
-    alert("Uploaded!");
-  });
-}
+        let user = firebase.auth().currentUser;
+        if (!user) {
+            alert("Login first!");
+            return;
+        }
+
+        // storage path
+        let videoRef = storage.ref("videos/" + user.uid + "/" + Date.now() + "_" + file.name);
+
+        let uploadTask = videoRef.put(file);
+
+        uploadTask.on("state_changed",
+            (snapshot) => {
+                let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log("Upload: " + progress.toFixed(0) + "%");
+            },
+            (error) => {
+                console.error(error);
+                alert("Upload error: " + error.message);
+            },
+            () => {
+                uploadTask.snapshot.ref.getDownloadURL().then((url) => {
+                    console.log("Video URL:", url);
+                    alert("Upload Complete!");
+                });
+            }
+        );
+    }
 </script>
-
-</body>
-</html>
