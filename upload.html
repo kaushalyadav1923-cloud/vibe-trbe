@@ -1,42 +1,197 @@
-<input type="file" id="videoFile" accept="video/*">
-<button onclick="uploadVideo()">Upload Video</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Upload Video - Vibe Tribe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- GOOGLE FONT -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin:0;
+    font-family:'Poppins', sans-serif;
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    color:#fff;
+    display:none; /* hide until auth check */
+}
+
+header {
+    background:#111;
+    padding:15px 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 4px 6px rgba(0,0,0,0.3);
+}
+
+header h2 {
+    margin:0;
+    font-weight:600;
+}
+
+button {
+    padding:8px 14px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    transition:0.3s;
+}
+
+button:hover {
+    opacity:0.85;
+}
+
+.logout {
+    background:#e74c3c;
+    color:#fff;
+}
+
+.container {
+    max-width:600px;
+    margin:60px auto;
+    background:rgba(255,255,255,0.05);
+    padding:30px;
+    border-radius:16px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.4);
+    text-align:center;
+    backdrop-filter:blur(12px);
+}
+
+.container h3 {
+    margin-bottom:20px;
+    font-weight:600;
+    font-size:24px;
+}
+
+input[type=file] {
+    width:100%;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    margin-bottom:15px;
+    font-size:14px;
+}
+
+#uploadBtn {
+    background:#2ecc71;
+    width:100%;
+    padding:12px;
+    font-size:16px;
+}
+
+#progressBarContainer {
+    width:100%;
+    background:rgba(255,255,255,0.2);
+    border-radius:8px;
+    margin-top:15px;
+    height:20px;
+    display:none;
+}
+
+#progressBar {
+    height:100%;
+    width:0%;
+    background:#27ae60;
+    border-radius:8px;
+    transition:0.3s;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h2>✨ Vibe Tribe</h2>
+    <button class="logout" onclick="logoutUser()">Logout</button>
+</header>
+
+<div class="container">
+    <h3>Upload Your Video</h3>
+    <input type="file" id="videoFile" accept="video/*" disabled>
+    <button id="uploadBtn" onclick="uploadVideo()" disabled>Upload Video</button>
+
+    <div id="progressBarContainer">
+        <div id="progressBar"></div>
+    </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
 <script>
-    const storage = firebase.storage();
+const firebaseConfig = {
+  apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
+  authDomain: "vibe-tribe-d5138.firebaseapp.com",
+  projectId: "vibe-tribe-d5138",
+  storageBucket: "vibe-tribe-d5138.firebasestorage.app",
+  messagingSenderId: "656217231234",
+  appId: "1:656217231234:web:e19e5e41836c4893c9899b",
+  measurementId: "G-BMJ9XQD4WD"
+};
 
-    function uploadVideo() {
-        let file = document.getElementById("videoFile").files[0];
-        if (!file) {
-            alert("Select a video first!");
-            return;
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// Check auth and profile
+auth.onAuthStateChanged(async (user)=>{
+    if(!user){
+        window.location.replace("login.html");
+    } else {
+        document.body.style.display = "block";
+        const docRef = db.collection("users").doc(user.uid);
+        const docSnap = await docRef.get();
+
+        if(docSnap.exists() && docSnap.data().profileCreated){
+            document.getElementById("videoFile").disabled = false;
+            document.getElementById("uploadBtn").disabled = false;
+        } else {
+            alert("Create your profile first to upload videos!");
         }
-
-        let user = firebase.auth().currentUser;
-        if (!user) {
-            alert("Login first!");
-            return;
-        }
-
-        // storage path
-        let videoRef = storage.ref("videos/" + user.uid + "/" + Date.now() + "_" + file.name);
-
-        let uploadTask = videoRef.put(file);
-
-        uploadTask.on("state_changed",
-            (snapshot) => {
-                let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log("Upload: " + progress.toFixed(0) + "%");
-            },
-            (error) => {
-                console.error(error);
-                alert("Upload error: " + error.message);
-            },
-            () => {
-                uploadTask.snapshot.ref.getDownloadURL().then((url) => {
-                    console.log("Video URL:", url);
-                    alert("Upload Complete!");
-                });
-            }
-        );
     }
+});
+
+// Upload video
+async function uploadVideo(){
+    const file = document.getElementById("videoFile").files[0];
+    if(!file) return alert("Select a video!");
+
+    const user = auth.currentUser;
+    const videoRef = storage.ref("videos/"+user.uid+"/"+Date.now()+"_"+file.name);
+
+    const progressBarContainer = document.getElementById("progressBarContainer");
+    const progressBar = document.getElementById("progressBar");
+    progressBarContainer.style.display = "block";
+
+    const uploadTask = videoRef.put(file);
+    uploadTask.on("state_changed",
+        snapshot => {
+            const progress = (snapshot.bytesTransferred/snapshot.totalBytes)*100;
+            progressBar.style.width = progress+"%";
+        },
+        error => { alert("Upload error: "+error.message); },
+        () => {
+            uploadTask.snapshot.ref.getDownloadURL().then(url=>{
+                alert("Upload complete!");
+                progressBarContainer.style.display = "none";
+                progressBar.style.width = "0%";
+                document.getElementById("videoFile").value = "";
+                console.log("Video URL:", url);
+            });
+        }
+    );
+}
+
+// Logout
+function logoutUser() {
+    auth.signOut().then(()=>{ window.location.replace("login.html"); });
+}
 </script>
+
+</body>
+</html>
