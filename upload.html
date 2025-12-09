@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Upload Video</title>
+</head>
+<body>
+
+<h2>Upload Your Video</h2>
+<input type="file" id="video">
+<button onclick="upload()">Upload</button>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+<script src="firebase.js"></script>
+
+<script>
+const storage = firebase.storage();
+
+function upload(){
+  const file = document.getElementById("video").files[0];
+  const ref = storage.ref("videos/" + file.name);
+
+  ref.put(file).then(()=>{
+    alert("Uploaded!");
+  });
+}
+</script>
+
+</body>
+</html>
