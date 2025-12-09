@@ -2,48 +2,89 @@
 <html>
 <head>
 <title>Create Profile</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
 <style>
-body { font-family:Poppins,sans-serif; background:#eef3ff; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-.box { background:#fff; padding:30px; border-radius:12px; width:320px; box-shadow:0 10px 30px rgba(0,0,0,0.15); }
-input { width:100%; padding:12px; margin-bottom:10px; border:1px solid #ccc; border-radius:8px; }
-button { width:100%; padding:12px; background:#2563eb; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; }
+body {
+  font-family: Arial;
+  background: #0d1117;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.container {
+  background: #161b22;
+  padding: 25px;
+  width: 350px;
+  border-radius: 10px;
+}
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 5px;
+  border: none;
+}
+button {
+  margin-top: 15px;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  background: dodgerblue;
+  color: white;
+  font-size: 16px;
+  border-radius: 5px;
+}
 </style>
-</head>
-<body>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-<div class="box">
-<h2>Create your Profile</h2>
-<input id="username" placeholder="Enter your name">
-<button id="saveProfile">Save Profile</button>
-</div>
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT_ID"
+};
 
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-<script>
-firebase.initializeApp({
-  apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
-  authDomain: "vibe-tribe-d5138.firebaseapp.com",
-  projectId: "vibe-tribe-d5138",
+let uid = null;
+
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+    uid = user.uid;
+  }
 });
 
-const db = firebase.firestore();
-const auth = firebase.auth();
+window.saveProfile = async function() {
+  let name = document.getElementById("name").value;
+  let bio = document.getElementById("bio").value;
 
-document.getElementById("saveProfile").onclick = async function(){
-  const name = document.getElementById("username").value;
-  const user = auth.currentUser;
-
-  await db.collection("users").doc(user.uid).set({
-    name: name,
-    phone: user.phoneNumber,
+  await setDoc(doc(db, "users", uid), {
+    name,
+    bio,
+    uid
   });
 
   alert("Profile saved!");
   window.location.href = "upload.html";
 }
 </script>
+</head>
+<body>
+
+<div class="container">
+  <h2>Create Profile</h2>
+  <input id="name" placeholder="Name">
+  <textarea id="bio" placeholder="Short Bio"></textarea>
+
+  <button onclick="saveProfile()">Save & Continue</button>
+</div>
+
 </body>
 </html>
