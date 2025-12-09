@@ -1,185 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Login - Vibe Tribe</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Login - Vibe Tribe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:url("bg.jpg") no-repeat center/cover;
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-  <style>
-    /* Full screen background image */
-    body {
-      margin:0;
-      font-family: 'Poppins', sans-serif;
-      height: 100vh;
-      background: url('https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1350&q=80') no-repeat center center fixed;
-      background-size: cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+.container {
+  background:rgba(255,255,255,0.2);
+  backdrop-filter:blur(12px);
+  padding:25px;
+  width:320px;
+  border-radius:16px;
+  color:#fff;
+  display:none;
+}
 
-    /* Semi-transparent login box */
-    .box {
-      width: 380px;
-      padding: 30px 25px;
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 20px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.25);
-      backdrop-filter: blur(10px);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
+input {
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border-radius:6px;
+  border:none;
+}
 
-    .box:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    }
-
-    .box h2 {
-      margin:0 0 20px;
-      font-weight:700;
-      color:#1e293b;
-      text-align:center;
-    }
-
-    .note {
-      font-size:13px;
-      color:#475569;
-      text-align:center;
-      margin-bottom:16px;
-    }
-
-    input {
-      width:100%;
-      padding:14px;
-      margin:10px 0;
-      border:1px solid #cbd5e1;
-      border-radius:12px;
-      font-size:15px;
-      transition: border 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    input:focus {
-      outline:none;
-      border-color:#2563eb;
-      box-shadow:0 0 8px rgba(37,99,235,0.5);
-    }
-
-    button {
-      width:100%;
-      padding:14px;
-      margin-top:15px;
-      border:none;
-      border-radius:12px;
-      background: linear-gradient(90deg, #2563eb, #3b82f6);
-      color:#fff;
-      font-weight:600;
-      font-size:15px;
-      cursor:pointer;
-      transition: background 0.3s ease, transform 0.2s ease;
-    }
-
-    button:hover {
-      background: linear-gradient(90deg, #3b82f6, #2563eb);
-      transform: translateY(-2px);
-    }
-
-    #recaptcha-container {
-      margin-top:10px;
-      display:flex;
-      justify-content:center;
-    }
-
-    .small {
-      font-size:13px;
-      color:#475569;
-      text-align:center;
-      margin-top:12px;
-    }
-
-    #otp, #verifyBtn { display:none; }
-  </style>
+button {
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  margin-top:10px;
+  cursor:pointer;
+  background:#2ecc71;
+  color:#fff;
+  font-weight:bold;
+}
+</style>
 </head>
-
 <body>
-<div class="box">
-  <h2>Login to Vibe Tribe</h2>
-  <p class="note">Enter your phone number. We will send an OTP to verify.</p>
 
-  <input id="phone" placeholder="+91xxxxxxxxxx" value="+91" />
-  <div id="recaptcha-container"></div>
-  <button id="sendBtn">Send OTP</button>
+<div class="container" id="loginBox">
+  <h2>Login</h2>
 
-  <input id="otp" placeholder="Enter OTP" />
-  <button id="verifyBtn">Verify OTP</button>
+  <label>Phone Number</label>
+  <input id="phone" placeholder="+91XXXXXXXXXX">
 
-  <p class="small">Need help? Contact admin.</p>
+  <div id="recaptcha"></div>
+
+  <button onclick="sendOTP()">Send OTP</button>
+
+  <div id="otpBox" style="display:none;">
+      <input id="otpCode" placeholder="Enter OTP">
+      <button onclick="verifyOTP()">Verify OTP</button>
+  </div>
+
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Firebase CDN -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
-    authDomain: "vibe-tribe-d5138.firebaseapp.com",
-    projectId: "vibe-tribe-d5138",
-    storageBucket: "vibe-tribe-d5138.firebasestorage.app",
-    messagingSenderId: "656217231234",
-    appId: "1:656217231234:web:e19e5e41836c4893c9899b"
-  };
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+const firebaseConfig = {
+  apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
+  authDomain: "vibe-tribe-d5138.firebaseapp.com",
+  projectId: "vibe-tribe-d5138",
+  storageBucket: "vibe-tribe-d5138.firebasestorage.app",
+  messagingSenderId: "656217231234",
+  appId: "1:656217231234:web:e19e5e41836c4893c9899b",
+  measurementId: "G-BMJ9XQD4WD"
+};
 
-  const phoneInput = document.getElementById("phone");
-  const otpInput = document.getElementById("otp");
-  const sendBtn = document.getElementById("sendBtn");
-  const verifyBtn = document.getElementById("verifyBtn");
-  let confirmationResult;
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 
-  sendBtn.onclick = function () {
-    const phone = phoneInput.value.trim();
-    if (!phone) return alert("Enter phone number");
+auth.onAuthStateChanged((user)=>{
+  if(user){
+    window.location = "index.html";
+  } else {
+    document.getElementById("loginBox").style.display = "block";
+  }
+});
 
-    sendBtn.disabled = true;
-    sendBtn.textContent = "Sending...";
+function sendOTP() {
+  let number = document.getElementById("phone").value;
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha');
 
-    auth.signInWithPhoneNumber(phone, window.recaptchaVerifier)
-      .then(res => {
-        confirmationResult = res;
-        otpInput.style.display = "block";
-        verifyBtn.style.display = "block";
-        sendBtn.style.display = "none";
-        alert("OTP sent!");
-      })
-      .catch(err => {
-        console.error(err);
-        alert(err.message);
-        sendBtn.disabled = false;
-        sendBtn.textContent = "Send OTP";
-      });
-  };
+  auth.signInWithPhoneNumber(number, window.recaptchaVerifier)
+  .then((confirmationResult)=>{
+      window.confirmationResult = confirmationResult;
+      alert("OTP Sent!");
+      document.getElementById("otpBox").style.display = "block";
+  }).catch((error)=>{
+      alert(error.message);
+  });
+}
 
-  verifyBtn.onclick = function () {
-    const code = otpInput.value.trim();
-    if (!code) return alert("Enter OTP");
+function verifyOTP() {
+  let code = document.getElementById("otpCode").value;
 
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = "Verifying...";
-
-    confirmationResult.confirm(code)
-      .then(result => {
-        alert("Login Success!");
-        window.location.href = "index.html";
-      })
-      .catch(err => {
-        alert("Invalid OTP");
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = "Verify OTP";
-      });
-  };
+  window.confirmationResult.confirm(code)
+  .then(()=>{
+    alert("Logged In!");
+    window.location = "index.html";
+  }).catch((err)=>{
+    alert(err.message);
+  });
+}
 </script>
+
 </body>
 </html>
