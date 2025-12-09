@@ -1,83 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Vibe Tribe</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <title>Vibe Tribe</title>
 
-<style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#111;
-  color:white;
-  display:none;
-}
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
 
-header {
-  background:#222;
-  padding:15px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #f8fafc;
+            display: none; /* IMPORTANT: hide until auth ready */
+        }
 
-button {
-  background:red;
-  padding:8px 12px;
-  border:none;
-  border-radius:6px;
-  color:white;
-  cursor:pointer;
-  font-weight:bold;
-}
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 40px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
 
-h1 {
-  text-align:center;
-  margin-top:100px;
-}
-</style>
+        .logo {
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        nav a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .hero {
+            padding: 80px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .logout {
+            background: #ef4444;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+        }
+    </style>
 </head>
+
 <body>
 
-<header>
-  <h2>Vibe Tribe</h2>
-  <button onclick="logout()">Logout</button>
-</header>
+    <!-- NAV -->
+    <header>
+        <div class="logo">✨ Vibe Tribe</div>
 
-<h1>Welcome to Dashboard 🎉</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="profile.html">Profile</a>
+            <a href="upload.html">Upload</a>
+            <button class="logout" onclick="logoutUser()">Logout</button>
+        </nav>
+    </header>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <!-- HERO -->
+    <section class="hero">
+        <h1>Welcome to Vibe Tribe 💫</h1>
+        <p>Explore, upload videos, connect with people!</p>
+    </section>
 
-<script>
-// 🔥 Config
-const firebaseConfig = {
-  apiKey: "YOUR-KEY",
-  authDomain: "YOUR-DOMAIN",
-  projectId: "YOUR-PROJECT",
-};
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
+    <!-- Firebase (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-// 🔥 Protect Page
-auth.onAuthStateChanged((user)=>{
-  if(!user){
-    window.location = "login.html";
-  } else {
-    document.body.style.display = "block";
-  }
-});
+    <script>
+        // 🔥 YOUR CONFIG (paste same)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpr9MXotr-M7noA7G28irleItKUELCY8Q",
+            authDomain: "vibe-tribe-d5138.firebaseapp.com",
+            projectId: "vibe-tribe-d5138",
+            storageBucket: "vibe-tribe-d5138.firebasestorage.app",
+            messagingSenderId: "656217231234",
+            appId: "1:656217231234:web:e19e5e41836c4893c9899b",
+            measurementId: "G-BMJ9XQD4WD"
+        };
 
-// 🔥 Logout
-function logout(){
-  auth.signOut().then(()=>{
-    window.location = "login.html";
-  });
-}
-</script>
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+
+        // ✔ FIX REFRESH LOOP
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // show page AFTER auth check complete
+                document.body.style.display = "block";
+            } else {
+                // Redirect only ONCE
+                setTimeout(() => {
+                    window.location.replace("login.html");
+                }, 300);
+            }
+        });
+
+        // LOGOUT
+        function logoutUser() {
+            auth.signOut().then(() => {
+                window.location.replace("login.html");
+            });
+        }
+    </script>
 
 </body>
+
 </html>
