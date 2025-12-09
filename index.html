@@ -1,63 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <meta charset="UTF-8">
-    <title>Vibe Tribe</title>
-    <link rel="stylesheet" href="style.css">
+<head>
+<meta charset="UTF-8">
+<title>My Website</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+    }
+    .navbar {
+        background: #121212;
+        padding: 15px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .container {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+        padding: 10px 15px;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 6px;
+    }
+    button:hover { background: #0056b3; }
+
+    #uploadSection, #profileSection {
+        display: none;
+        margin-top: 20px;
+    }
+</style>
 </head>
+
 <body>
 
-    <!-- NAVBAR -->
-    <header>
-        <div class="logo">Vibe Tribe</div>
-        <nav>
-            <a href="#">Home</a>
-            <a href="#">About</a>
-            <a href="#">Community</a>
-            <a href="#">Contact</a>
-        </nav>
-    </header>
+<div class="navbar">
+    <h2>MY SITE</h2>
+    <span id="usernameDisplay"></span>
+    <button id="logoutBtn">Logout</button>
+</div>
 
-    <!-- HERO SECTION -->
-    <section class="hero">
-        <h1>Welcome to Vibe Tribe</h1>
-        <p>Your ultimate space to explore vibes and communities!</p>
-        <a href="login.html" class="btn">Login to the vibe Tribe</a>
-    </section>
+<div class="container">
 
-    <!-- ABOUT SECTION -->
-    <section class="about">
-        <h2>About Vibe Tribe</h2>
-        <p>Vibe Tribe is a modern platform to share ideas, connect with like-minded people, and explore creative content. Our mission is to bring vibes and communities together in one space.</p>
-    </section>
+    <h2>Welcome to Dashboard</h2>
 
-    <!-- COMMUNITY SECTION -->
-    <section class="community">
-        <h2>Our Community</h2>
-        <div class="cards">
-            <div class="card">
-                <h3>Creative Minds</h3>
-                <p>Connect with artists and creators.</p>
-            </div>
-            <div class="card">
-                <h3>Gamers Hub</h3>
-                <p>Join gaming discussions and streams.</p>
-            </div>
-            <div class="card">
-                <h3>Tech Talk</h3>
-                <p>Discuss the latest in tech and gadgets.</p>
-            </div>
-        </div>
-    </section>
+    <button id="profileBtn">Create Profile</button>
+    <button id="uploadBtn">Upload Video</button>
 
-    <!-- FOOTER -->
-    <footer>
-        <p>&copy; 2025 Vibe Tribe. All rights reserved.</p>
-    </footer>
+    <!-- PROFILE SECTION -->
+    <div id="profileSection">
+        <h3>Create Profile</h3>
+        <input type="text" id="fullName" placeholder="Full Name"><br><br>
+        <input type="text" id="bio" placeholder="Short Bio"><br><br>
+        <button id="saveProfile">Save Profile</button>
+    </div>
+
+    <!-- UPLOAD SECTION -->
+    <div id="uploadSection">
+        <h3>Upload Video</h3>
+        <input type="file" id="videoFile"><br><br>
+        <button id="uploadVideo">Upload</button>
+        <p id="status"></p>
+    </div>
+
+</div>
+
+<!-- ============ FIREBASE =============== -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig = {
+    apiKey: "YOUR-API-KEY",
+    authDomain: "YOUR-DOMAIN",
+    projectId: "YOUR-PROJECT-ID",
+    storageBucket: "YOUR-STORAGE",
+    messagingSenderId: "YOUR-SENDER",
+    appId: "YOUR-APP-ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// ================= LOGIN CHECK =================
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location = "login.html";
+    } else {
+        document.getElementById("usernameDisplay").innerText = user.email;
+    }
+});
+
+// ================= LOGOUT =================
+document.getElementById("logoutBtn").onclick = () => {
+    signOut(auth);
+};
+
+// ================= SHOW SECTIONS =================
+document.getElementById("profileBtn").onclick = () => {
+    document.getElementById("profileSection").style.display = "block";
+    document.getElementById("uploadSection").style.display = "none";
+};
+
+document.getElementById("uploadBtn").onclick = () => {
+    document.getElementById("uploadSection").style.display = "block";
+    document.getElementById("profileSection").style.display = "none";
+};
+
+// ================= SAVE PROFILE =================
+document.getElementById("saveProfile").onclick = async () => {
+    let user = auth.currentUser;
+    await setDoc(doc(db, "profiles", user.uid), {
+        name: fullName.value,
+        bio: bio.value
+    });
+    alert("Profile Saved!");
+};
+
+// ================= UPLOAD VIDEO =================
+document.getElementById("uploadVideo").onclick = async () => {
+    let user = auth.currentUser;
+    let file = document.getElementById("videoFile").files[0];
+    let fileRef = ref(storage, "videos/" + user.uid + "/" + file.name);
+
+    await uploadBytes(fileRef, file);
+    document.getElementById("status").innerText = "Video Uploaded!";
+};
+</script>
 
 </body>
-
 </html>
-
